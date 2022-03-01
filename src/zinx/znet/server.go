@@ -2,6 +2,7 @@ package znet
 
 import (
 	"Game_Zinx/src/zinx/ziface"
+	"errors"
 	"fmt"
 	"net"
 )
@@ -11,6 +12,15 @@ type Server struct {
 	IpVersion string
 	Ip        string
 	Port      int
+}
+
+func CallBackToClient(conn *net.TCPConn, data []byte, cnt int) error {
+	fmt.Println("[Conn Handle] CallBackToClient...")
+	if _, err := conn.Write(data[:cnt]); err != nil {
+		fmt.Println("write back buf err", err)
+		return errors.New("CallBackToClient Error ")
+	}
+	return nil
 }
 
 func (s *Server) Start() {
@@ -29,6 +39,8 @@ func (s *Server) Start() {
 	}
 	fmt.Println("Start Zinx server succ,", s.Name, "succ Listenning...")
 
+	var cid uint32
+	cid = 0
 	// 3.阻塞等待客户端连接, 处理客户端业务 （读写）
 	for {
 		conn, err := listenner.AcceptTCP()
@@ -36,22 +48,11 @@ func (s *Server) Start() {
 			fmt.Println("Accept err", err)
 			continue
 		}
-		// 已经建立连接，做一些业务
-		go func() {
-			for {
-				buf := make([]byte, 512)
-				cnt, err := conn.Read(buf)
-				if err != nil {
-					fmt.Println("recev buf err", err)
-					continue
-				}
-				// 会写业务
-				if _, err := conn.Write(buf[:cnt]); err != nil {
-					fmt.Println("write back buf err:", err)
-					continue
-				}
-			}
-		}()
+		// 将处理新连接的业务方法 和 conn 进行绑定， 得到我们的链接模块
+		dealConn := NewConnection(conn, cid, CallBackToClient)
+		cid++
+		// 启动当前的链接业务处理
+		go dealConn.Start()
 
 	}
 
