@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"Game_Zinx/src/zinx/utils"
 	"Game_Zinx/src/zinx/ziface"
 	"fmt"
 	"net"
@@ -9,24 +10,30 @@ import (
 
 type Server struct {
 	Name      string
-	IpVersion string
-	Ip        string
+	IPVersion string
+	IP        string
 	Port      int
 	Router    ziface.IRouter
 }
 
 func (s *Server) Start() {
-	fmt.Printf("[Start] Server Listenner at IP:%s, Port %d, is startinh \n", s.Ip, s.Port)
+	fmt.Printf("[START] Server name: %s,listenner at IP: %s, Port %d is starting\n", s.Name, s.IP, s.Port)
+	fmt.Printf("[Zinx] Version: %s, MaxConn: %d,  MaxPacketSize: %d\n",
+		utils.GlobalObject.Version,
+		utils.GlobalObject.MaxConn,
+		utils.GlobalObject.MaxPacketSize)
+
+	fmt.Printf("[Start] Server Listenner at IP:%s, Port %d, is startinh \n", s.IP, s.Port)
 	// 1. 获取一个TCP Addr （套接字）
-	addr, err := net.ResolveTCPAddr(s.IpVersion, fmt.Sprintf("%s:%d", s.Ip, s.Port))
+	addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 	if err != nil {
 		fmt.Println("resolve tcp addr error:", err)
 		return
 	}
 	// 2.监听地址
-	listenner, err := net.ListenTCP(s.IpVersion, addr)
+	listenner, err := net.ListenTCP(s.IPVersion, addr)
 	if err != nil {
-		fmt.Println("listen", s.IpVersion, "err", err)
+		fmt.Println("listen", s.IPVersion, "err", err)
 		return
 	}
 	fmt.Println("Start Zinx server succ,", s.Name, "succ Listenning...")
@@ -71,11 +78,14 @@ func (s *Server) AddRouter(router ziface.IRouter) {
 }
 
 func NewServer(name string) ziface.IServer {
+	//先初始化全局配置文件
+	utils.GlobalObject.Reload()
+
 	s := &Server{
-		Name:      name,
-		IpVersion: "tcp4",
-		Ip:        "0.0.0.0",
-		Port:      8999,
+		Name:      utils.GlobalObject.Name, //从全局参数获取
+		IPVersion: "tcp4",
+		IP:        utils.GlobalObject.Host,    //从全局参数获取
+		Port:      utils.GlobalObject.TcpPort, //从全局参数获取
 		Router:    nil,
 	}
 	return s
