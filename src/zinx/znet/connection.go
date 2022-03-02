@@ -49,6 +49,7 @@ func (c *Connection) StartReader() {
 			conn: c,
 			data: buf,
 		}
+		//从路由Routers 中找到注册绑定Conn的对应Handle
 		go func(request ziface.IRequest) {
 			c.Router.PreHandle(request)
 			c.Router.Handle(request)
